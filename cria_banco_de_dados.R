@@ -12,6 +12,7 @@ cria_banco_de_dados <- function(ano = 2023,
   logica_tipos <- setNames(as.list(colunas_tipos), colunas_selecionar)
   
   handler <- function(file) {
+    
     serie_temporal <- read_delim(unz(arquivo,
                                      file),
                                  skip = 8,
@@ -37,19 +38,40 @@ cria_banco_de_dados <- function(ano = 2023,
     colnames(informacoes_gerais) <- informacoes_gerais[1,]
     informacoes_gerais <- informacoes_gerais[-1,]
     
-    serie_temporal <- serie_temporal %>%
-      mutate(estacao = informacoes_gerais["ESTACAO:"] %>% pull)
+    if (ano <= 2018) {
+      serie_temporal <- serie_temporal %>%
+        mutate(estacao = informacoes_gerais["ESTAÇÃO:"] %>% pull)
+    }
+    
+    if (ano == 2019) {
+      serie_temporal <- serie_temporal %>%
+        mutate(estacao = informacoes_gerais["ESTAC?O:"] %>% pull)
+    }
+    
+    if (ano >= 2020) {
+      serie_temporal <- serie_temporal %>%
+        mutate(estacao = informacoes_gerais["ESTACAO:"] %>% pull)
+    }
     
     return(serie_temporal)
     
   }
   
+  if (ano > 2019) {
+    dados <- unzip(arquivo, list = TRUE)$Name %>%
+      lapply(handler) %>%
+      bind_rows
+    
+    return(dados)
+  }
   
-  dados <- unzip(arquivo, list = TRUE)$Name %>%
+  dados <- unzip(arquivo, list = TRUE)[-1,]$Name %>%
     lapply(handler) %>%
     bind_rows
   
   return(dados)
+  
+  
 }
 
 # EXEMPLO
@@ -57,5 +79,5 @@ cria_banco_de_dados <- function(ano = 2023,
 #ahslaoq <- cria_banco_de_dados(2020,
 #                         c("Data",
 #                           "Hora UTC",
-#                           "TEMPERATURA DO PONTO DE ORVALHO (°C)"),
+#                           "UMIDADE RELATIVA DO AR, HORARIA (%)"),
 #                         "Dcd")
